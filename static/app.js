@@ -78,11 +78,6 @@ const ENTITIES = {
         "type": "date"
       },
       {
-        "key": "end_datepackage",
-        "label": "วันหมดอายุแพ็กเกจ",
-        "type": "date"
-      },
-      {
         "key": "referred_by",
         "label": "รหัสผู้แนะนำ",
         "type": "number"
@@ -95,14 +90,26 @@ const ENTITIES = {
     "idKey": "class_id",
     "search": [
       {
-        "key": "name",
+        "key": "classname",
         "label": "ชื่อคลาส",
-        "type": "text"
+        "type": "select",
+        "optionsFrom": {
+          "api": "/api/ClassName",
+          "value": "name",
+          "label": "name"
+        }
+
       },
       {
         "key": "room",
         "label": "ห้อง",
-        "type": "text"
+        "type": "select",
+        "optionsFrom": {
+          "api": "/api/classes",
+          "value": "room",
+          "label": "room"
+        }
+
       }
     ],
     "form": [
@@ -113,8 +120,13 @@ const ENTITIES = {
       },
       {
         "key": "trainer_id",
-        "label": "รหัสเทรนเนอร์",
-        "type": "number"
+        "label": "เทรนเนอร์",
+        "type": "select",
+        "optionsFrom": {
+          "api": "/api/trainers",
+          "value": "trainer_id",
+          "label": "name"
+        }
       },
       {
         "key": "package_id",
@@ -144,12 +156,12 @@ const ENTITIES = {
       {
         "key": "schedule_time",
         "label": "เวลาเริ่ม",
-        "type": "text"
+        "type": "datetime-local"
       },
       {
         "key": "end_time",
         "label": "เวลาสิ้นสุด",
-        "type": "text"
+        "type": "datetime-local"
       }
     ]
   },
@@ -166,7 +178,13 @@ const ENTITIES = {
       {
         "key": "specialty",
         "label": "ความเชี่ยวชาญ",
-        "type": "text"
+        "type": "select",
+        "optionsFrom": {
+          "api": "/api/trainers",
+          "value": "specialty",
+          "label": "specialty"
+        }
+
       }
     ],
     "form": [
@@ -200,7 +218,12 @@ const ENTITIES = {
       {
         "key": "zone",
         "label": "โซน",
-        "type": "text"
+        "type": "select",
+        "optionsFrom": {
+          "api": "/api/zones",
+          "value": "zone",
+          "label": "zone"
+        }
       },
       {
         "key": "status",
@@ -242,20 +265,80 @@ const ENTITIES = {
       }
     ]
   },
+  "class_equipment": {
+    "label": "การยืมอุปกรณ์",
+    "api": "/api/class_equipment",
+    "idKey": "id",
+    "search": [
+      {
+        "key": "class_id",
+        "label": "คลาสเรียน",
+        "type": "select",
+        "optionsFrom": {
+          "api": "/api/classes",
+          "value": "class_id",
+          "label": "name"
+        }
+      },
+      {
+        "key": "equip_id",
+        "label": "อุปกรณ์",
+        "type": "select",
+        "optionsFrom": {
+          "api": "/api/equipment",
+          "value": "equip_id",
+          "label": "name"
+        }
+      }
+    ],
+    "form": [
+      {
+        "key": "class_id",
+        "label": "คลาสเรียน",
+        "type": "select",
+        "optionsFrom": {
+          "api": "/api/classes",
+          "value": "class_id",
+          "label": "name"
+        }
+      },
+      {
+        "key": "equip_id",
+        "label": "อุปกรณ์",
+        "type": "select",
+        "optionsFrom": {
+          "api": "/api/equipment",
+          "value": "equip_id",
+          "label": "name"
+        }
+      },
+      {
+        "key": "quantity",
+        "label": "จำนวนที่ใช้/ยืม",
+        "type": "number"
+      }
+    ]
+  },
   "bookings": {
     "label": "การจอง",
     "api": "/api/bookings",
     "idKey": "booking_id",
     "search": [
       {
-        "key": "member_id",
-        "label": "รหัสสมาชิก",
-        "type": "number"
+        "key": "Membername",
+        "label": "ชื่อสมาชิก",
+        "type": "text"
       },
       {
-        "key": "class_id",
-        "label": "รหัสคลาส",
-        "type": "number"
+        "key": "classname",
+        "label": "ชื่อคลาส",
+        "type": "select",
+        "optionsFrom": {
+          "api": "/api/ClassName",
+          "value": "name",
+          "label": "name"
+        }
+
       },
       {
         "key": "status",
@@ -271,8 +354,13 @@ const ENTITIES = {
     "form": [
       {
         "key": "member_id",
-        "label": "รหัสสมาชิก",
-        "type": "number"
+        "label": "สมาชิก",
+        "type": "select",
+        "optionsFrom": {
+          "api": "/api/members",
+          "value": "member_id",
+          "label": "name"
+        }
       },
       {
         "key": "class_id",
@@ -287,7 +375,7 @@ const ENTITIES = {
       {
         "key": "book_date",
         "label": "วันที่จอง",
-        "type": "date"
+        "type": "datetime-local"
       },
       {
         "key": "status",
@@ -327,7 +415,7 @@ async function loadOptions(fields, forSearch) {
   for (const f of fields.filter(f => f.optionsFrom)) {
     const src = f.optionsFrom, r = await api(src.api);
     f.options = r.ok ? (r.data || []).map(row => ({ value: row[src.value], label: row[src.label] }))
-                     : [{ value: "", label: (r.todo ? "🚧 " : "⚠️ ") + r.error }];
+      : [{ value: "", label: (r.todo ? "🚧 " : "⚠️ ") + r.error }];
     if (forSearch && r.ok) f.options.unshift({ value: "", label: "ทั้งหมด" });
   }
 }

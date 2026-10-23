@@ -140,6 +140,32 @@ def equipment_update(_id):
 def equipment_delete(_id):
     return safe(db.delete_equipment, _id)
 
+@app.route("/api/zones", methods=["GET"])
+def zones_list():
+    return safe(db.list_zones)
+
+# ---- การยืมอุปกรณ์ (class_equipment) ----
+@app.route("/api/class_equipment", methods=["GET"])
+def class_equipment_list():
+    filters = {k: v for k, v in request.args.items() if v}
+    return safe(db.search_class_equipment, filters)
+
+@app.route("/api/class_equipment/<int:_id>", methods=["GET"])
+def class_equipment_get(_id):
+    return safe(db.get_class_equipment, _id)
+
+@app.route("/api/class_equipment", methods=["POST"])
+def class_equipment_create():
+    return safe(db.create_class_equipment, request.json)
+
+@app.route("/api/class_equipment/<int:_id>", methods=["PUT"])
+def class_equipment_update(_id):
+    return safe(db.update_class_equipment, _id, request.json)
+
+@app.route("/api/class_equipment/<int:_id>", methods=["DELETE"])
+def class_equipment_delete(_id):
+    return safe(db.delete_class_equipment, _id)
+
 # ---- การจอง ----
 @app.route("/api/bookings", methods=["GET"])
 def bookings_list():
@@ -161,7 +187,9 @@ def booking_update(_id):
 @app.route("/api/bookings/<int:_id>", methods=["DELETE"])
 def booking_delete(_id):
     return safe(db.delete_booking, _id)
-
+@app.route("/api/ClassName", methods=["GET"])
+def ClassName_list():
+    return safe(db.list_ClassName)
 
 # ---- รายงาน ----
 @app.route("/api/reports/summary")

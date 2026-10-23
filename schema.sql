@@ -225,3 +225,80 @@ insert into booking (booking_id, member_id, class_id, book_date, status) values
 -- คลาส 7 (Core & Six-Pack Blast): 2 จอง (booked ทั้งหมด)
 (17, 8, 7, '2026-04-09 11:00:00', 'booked'),
 (18, 10, 7, '2026-04-09 13:50:00', 'booked');
+
+
+-- ============================================================
+-- 6. วิวฐานข้อมูล (Database Views for Dashboard & Reports)
+-- ============================================================
+
+-- View ที่ 1: สรุปภาพรวมบน Dashboard (การ์ด 6 ใบ)
+CREATE OR REPLACE VIEW view_report_summary AS
+SELECT 
+    (SELECT COUNT(*) FROM member) AS 'สมาชิก',
+    (SELECT COUNT(*) FROM gym_class) AS 'คลาส',
+    (SELECT COUNT(*) FROM trainer) AS 'เทรนเนอร์',
+    (SELECT COUNT(*) FROM booking WHERE status = 'booked') AS 'การจอง',
+    COALESCE(
+        (SELECT p.package_name 
+         FROM member m 
+         JOIN package p ON m.package_id = p.package_id 
+         GROUP BY p.package_id, p.package_name 
+         ORDER BY COUNT(*) DESC, p.package_name ASC 
+         LIMIT 1), 
+        'ไม่มีข้อมูล'
+    ) AS 'package ยอดฮิต',
+    (SELECT IFNULL(SUM(p.price), 0) 
+     FROM member m 
+     JOIN package p ON m.package_id = p.package_id) AS 'รายได้รวม';
+
+-- View ที่ 2: คลาสยอดนิยม (Most Booked - Top 5)
+CREATE OR REPLACE VIEW view_popular_classes AS
+SELECT 
+    c.class_id AS 'รหัสคลาส',
+    c.name AS 'ชื่อคลาส',
+    c.room AS 'ห้องเรียน',
+    t.name AS 'ผู้ฝึกสอน',
+    c.capacity AS 'ความจุ (คน)',
+    COUNT(b.booking_id) AS 'จำนวนผู้จอง (คน)'
+FROM gym_class c
+INNER JOIN booking b ON c.class_id = b.class_id
+INNER JOIN trainer t ON c.trainer_id = t.trainer_id
+WHERE b.status = 'booked'
+GROUP BY c.class_id, c.name, c.room, t.name, c.capacity
+ORDER BY COUNT(b.booking_id) DESC, c.class_id ASC
+LIMIT 5;
+
+-- View ที่ 3: เทรนเนอร์ที่มีผู้จองมากกว่าค่าเฉลี่ย (Above Average)
+-- คิดค่าเฉลี่ยง่ายๆ: (จำนวนการจองทั้งหมด / จำนวนเทรนเนอร์ทั้งหมด)
+CREATE OR REPLACE VIEW view_trainers_above_avg AS
+SELECT 
+    t.trainer_id AS 'รหัสเทรนเนอร์',
+    t.name AS 'ชื่อเทรนเนอร์',
+    t.specialty AS 'ความเชี่ยวชาญ',
+    t.phone AS 'เบอร์โทรศัพท์',
+    COUNT(b.booking_id) AS 'จำนวนการจองทั้งหมด (ครั้ง)'
+FROM trainer t
+INNER JOIN gym_class c ON t.trainer_id = c.trainer_id
+INNER JOIN booking b ON c.class_id = b.class_id
+WHERE b.status = 'booked'
+GROUP BY t.trainer_id, t.name, t.specialty, t.phone
+HAVING COUNT(b.booking_id) > (
+    (SELECT COUNT(*) FROM booking WHERE status = 'booked') / (SELECT COUNT(*) FROM trainer)
+)
+ORDER BY COUNT(b.booking_id) DESC, t.trainer_id ASC;
+
+
+-- View ที่ 4: อุปกรณ์ที่ใช้ในแต่ละคลาส (Join 3 Tables: class_equipment, gym_class, equipment)
+CREATE OR REPLACE VIEW view_class_equipment AS
+SELECT 
+    c.class_id AS 'รหัสคลาส',
+    c.name AS 'ชื่อคลาส',
+    c.room AS 'ห้องเรียน',
+    e.name AS 'ชื่ออุปกรณ์',
+    e.zone AS 'โซน',
+    ce.quantity AS 'จำนวนที่ใช้ (ชิ้น)',
+    e.status AS 'สถานะอุปกรณ์'
+FROM class_equipment ce
+INNER JOIN gym_class c ON ce.class_id = c.class_id
+INNER JOIN equipment e ON ce.equip_id = e.equip_id
+ORDER BY c.class_id ASC, e.name ASC;
